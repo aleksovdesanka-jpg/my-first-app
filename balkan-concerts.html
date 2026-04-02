@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balkan Concerts — USA &amp; Canada</title>
+  <style>
+    :root {
+      --bg:       #0b0b11;
+      --surface:  #13131d;
+      --surface2: #1a1a28;
+      --border:   rgba(130, 80, 255, 0.18);
+      --accent:   #8250ff;
+      --accent2:  #00c2cb;
+      --text:     #e8e8f0;
+      --text2:    #8a8aaa;
+      --green:    #34d399;
+      --ipr-clr:  #a78bfa;
+      --bit-clr:  #22d3ee;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem 6rem;
+    }
+
+    a { color: inherit; }
+
+    .wrap { max-width: 1040px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 2.8rem; }
+
+    .site-flags { font-size: 2rem; letter-spacing: .4rem; margin-bottom: .7rem;
+      filter: drop-shadow(0 0 12px rgba(130,80,255,.5)); }
+
+    h1 {
+      font-size: clamp(2rem, 5.5vw, 3rem);
+      font-weight: 900;
+      background: linear-gradient(130deg, var(--accent) 30%, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: .45rem;
+    }
+
+    .tagline { color: var(--text2); font-size: 1rem; line-height: 1.55; max-width: 480px; margin: 0 auto .9rem; }
+
+    .source-pills { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+    .source-pill {
+      font-size: .75rem; font-weight: 600; padding: .22rem .7rem;
+      border-radius: 99px; border: 1px solid;
+    }
+    .source-pill.ipr { color: var(--ipr-clr); border-color: var(--ipr-clr); background: rgba(167,139,250,.08); }
+    .source-pill.bit { color: var(--bit-clr); border-color: var(--bit-clr); background: rgba(34,211,238,.08); }
+
+    /* ── Search button ── */
+    .search-wrap { text-align: center; margin-bottom: 2rem; }
+
+    #findBtn {
+      padding: .95rem 3rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: 1rem;
+      color: #fff; font-size: 1.05rem; font-weight: 700;
+      letter-spacing: .025em; cursor: pointer;
+      box-shadow: 0 4px 24px rgba(130,80,255,.35);
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+    }
+    #findBtn:hover:not(:disabled) {
+      opacity: .88; transform: translateY(-2px);
+      box-shadow: 0 7px 30px rgba(130,80,255,.5);
+    }
+    #findBtn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Progress ── */
+    #progressWrap { display: none; margin-bottom: 2rem; }
+    #progressWrap.show { display: block; }
+
+    .progress-bar-track {
+      width: 100%; height: 5px;
+      background: var(--surface2); border-radius: 99px; overflow: hidden;
+      margin-bottom: .65rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      animation: indeterminate 1.6s ease-in-out infinite;
+      width: 40%;
+    }
+    @keyframes indeterminate {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(320%); }
+    }
+    .progress-bar-fill.done { animation: none; width: 100%; transition: width .4s; }
+
+    #statusText {
+      text-align: center; font-size: .85rem; color: var(--text2);
+      min-height: 1.3em; transition: opacity .2s;
+    }
+
+    /* ── Error ── */
+    #errorBox {
+      display: none;
+      background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.3);
+      border-radius: .75rem; padding: .85rem 1rem;
+      color: #fca5a5; font-size: .9rem; margin-bottom: 1.5rem;
+    }
+    #errorBox.show { display: flex; gap: .5rem; align-items: center; }
+
+    /* ── Results header ── */
+    #resultsHeader {
+      display: none; align-items: center; gap: .6rem;
+      font-size: .875rem; color: var(--text2); margin-bottom: 1.5rem;
+    }
+    #resultsHeader.show { display: flex; }
+    #resultsHeader strong { color: var(--green); font-size: 1rem; }
+
+    /* ── Month groups ── */
+    .month-group { margin-bottom: 2.8rem; }
+
+    .group-label {
+      display: flex; align-items: center; gap: .75rem;
+      margin-bottom: 1.1rem;
+    }
+    .group-label h2 {
+      font-size: 1.25rem; font-weight: 800; color: var(--text);
+      line-height: 1.2;
+    }
+    .group-label .event-count {
+      font-size: .72rem; font-weight: 700; padding: .2rem .55rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 99px; color: var(--text2); white-space: nowrap;
+    }
+    .group-divider {
+      flex: 1; height: 1px; background: var(--border);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.1rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.1rem;
+      padding: 1.2rem;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp .3s ease both;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card::before {
+      content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 1.1rem 1.1rem 0 0;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(130,80,255,.45);
+      box-shadow: 0 8px 28px rgba(0,0,0,.4);
+    }
+
+    .card-artist {
+      font-size: 1.15rem; font-weight: 700; line-height: 1.25;
+      color: var(--text);
+    }
+
+    .card-meta {
+      display: flex; flex-direction: column; gap: .28rem;
+      font-size: .855rem; color: var(--text2); line-height: 1.45;
+    }
+    .card-meta span { display: flex; align-items: flex-start; gap: .4rem; }
+    .card-meta .icon { flex-shrink: 0; font-size: .85rem; margin-top: 1px; }
+
+    .card-footer {
+      margin-top: auto;
+      padding-top: .55rem;
+      display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    }
+
+    .source-badge {
+      font-size: .68rem; font-weight: 700; padding: .18rem .55rem;
+      border-radius: 99px; border: 1px solid; white-space: nowrap;
+    }
+    .source-badge.ipr { color: var(--ipr-clr); border-color: var(--ipr-clr); background: rgba(167,139,250,.08); }
+    .source-badge.bit { color: var(--bit-clr); border-color: var(--bit-clr); background: rgba(34,211,238,.08); }
+    .source-badge.both { color: #fff; border-color: var(--accent); background: var(--accent); }
+
+    .ticket-btn {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .38rem .85rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: .55rem; color: #fff;
+      font-size: .8rem; font-weight: 700;
+      text-decoration: none;
+      transition: opacity .18s, transform .15s;
+      white-space: nowrap;
+    }
+    .ticket-btn:hover { opacity: .85; transform: translateY(-1px); }
+
+    .event-link {
+      margin-left: auto;
+      font-size: .8rem; color: var(--accent);
+      text-decoration: none; font-weight: 600;
+      padding: .38rem .7rem;
+      border: 1px solid rgba(130,80,255,.35);
+      border-radius: .55rem;
+      transition: background .15s, color .15s;
+    }
+    .event-link:hover { background: var(--accent); color: #fff; }
+
+    /* ── Empty state ── */
+    #emptyState {
+      display: none; text-align: center; padding: 4rem 1rem;
+    }
+    #emptyState.show { display: block; }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+    #emptyState p { color: var(--text2); line-height: 1.65; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; margin-top: 5rem;
+      color: #35354a; font-size: .75rem; line-height: 1.8;
+    }
+    footer a { color: #444460; }
+
+    /* ── Group toggle ── */
+    .group-toggle {
+      margin-left: auto;
+      display: flex; gap: 2px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: .6rem; padding: 3px;
+    }
+    .toggle-btn {
+      padding: .3rem .8rem; border: none; border-radius: .45rem;
+      font-size: .78rem; font-weight: 600; cursor: pointer;
+      background: transparent; color: var(--text2);
+      transition: background .15s, color .15s;
+    }
+    .toggle-btn.active { background: var(--accent); color: #fff; }
+    .toggle-btn:not(.active):hover { color: var(--text); }
+
+    @media (max-width: 500px) {
+      #findBtn { width: 100%; }
+      .cards-grid { grid-template-columns: 1fr; }
+      #resultsHeader { flex-wrap: wrap; }
+      .group-toggle { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="site-flags">🇲🇰 🇷🇸 🇭🇷 🇧🇦 🇲🇪</div>
+    <h1>Balkan Concerts<br>USA &amp; Canada</h1>
+  </header>
+
+  <div class="search-wrap">
+    <button id="findBtn" onclick="startSearch()">🎵 Find Concerts</button>
+  </div>
+
+  <!-- Progress -->
+  <div id="progressWrap">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <p id="statusText">Starting…</p>
+  </div>
+
+  <!-- Error -->
+  <div id="errorBox"><span>⚠️</span><span id="errorMsg"></span></div>
+
+  <!-- Results header + group toggle -->
+  <div id="resultsHeader">
+    <strong id="totalCount">0</strong>
+    <span>upcoming concerts found in the USA &amp; Canada</span>
+    <div class="group-toggle" id="groupToggle">
+      <button class="toggle-btn active" id="btnByArtist" onclick="setGrouping('artist')">By Artist</button>
+      <button class="toggle-btn" id="btnByDate" onclick="setGrouping('date')">By Date</button>
+    </div>
+  </div>
+
+  <!-- Results container (grouped by month) -->
+  <div id="results"></div>
+
+  <!-- Empty state -->
+  <div id="emptyState">
+    <div class="empty-icon">🎵</div>
+    <p>No upcoming concerts found right now.<br>Check back soon — shows get announced frequently!</p>
+  </div>
+
+  <footer>
+    Data sourced from
+    <a href="https://izprveruke.com" target="_blank" rel="noopener">izprveruke.com</a>
+    &amp;
+    <a href="https://bandsintown.com" target="_blank" rel="noopener">Bandsintown</a>
+    · No API keys required · Results are live from the web
+  </footer>
+
+</div>
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let sse        = null;
+  let concerts   = [];
+  let totalShown = 0;
+  let groupBy    = 'artist'; // 'artist' | 'date'
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function safeHref(url) {
+    if (!url) return null;
+    const s = String(url).trim();
+    return /^https?:\/\//i.test(s) ? s.replace(/"/g,'%22') : null;
+  }
+
+  function formatDate(dateStr, timeStr) {
+    if (!dateStr) return 'Date TBD';
+    try {
+      const [y, m, d] = dateStr.slice(0,10).split('-').map(Number);
+      const label = new Date(y, m-1, d).toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      });
+      return timeStr ? `${label} · ${timeStr}` : label;
+    } catch { return dateStr; }
+  }
+
+  function monthKey(dateStr) {
+    if (!dateStr) return '9999-99';
+    return dateStr.slice(0, 7);
+  }
+
+  function monthLabel(key) {
+    if (key === '9999-99') return 'Date Unknown';
+    const [y, m] = key.split('-').map(Number);
+    return new Date(y, m-1, 1).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+  }
+
+  // ── Source badge ───────────────────────────────────────────────────────────
+  function sourceBadge(source) {
+    if (!source) return '';
+    const both = source.includes('izprveruke') && source.includes('Bandsintown');
+    if (both)                          return `<span class="source-badge both">Both sources</span>`;
+    if (source.includes('izprveruke')) return `<span class="source-badge ipr">izprveruke.com</span>`;
+    if (source.includes('Bandsintown'))return `<span class="source-badge bit">Bandsintown</span>`;
+    return `<span class="source-badge ipr">${esc(source)}</span>`;
+  }
+
+  // ── Build a card element ───────────────────────────────────────────────────
+  function buildCard(c, showArtist = false) {
+    const div  = document.createElement('div');
+    div.className = 'card';
+    div.dataset.date = c.date || '9999-99-99';
+
+    const ticketHref = safeHref(c.ticketLink);
+    const eventHref  = safeHref(c.eventUrl);
+    const location   = [c.venue, c.city, c.country].filter(Boolean).join(' · ');
+
+    div.innerHTML = `
+      ${showArtist ? `<div class="card-artist">${esc(c.artist)}</div>` : ''}
+      <div class="card-meta">
+        <span><span class="icon">📅</span>${esc(formatDate(c.date, c.time))}</span>
+        ${location ? `<span><span class="icon">📍</span>${esc(location)}</span>` : ''}
+      </div>
+      <div class="card-footer">
+        ${sourceBadge(c.source)}
+        ${ticketHref
+          ? `<a class="ticket-btn" href="${esc(ticketHref)}" target="_blank" rel="noopener noreferrer">🎟 Buy Tickets</a>`
+          : (eventHref ? `<a class="event-link" href="${esc(eventHref)}" target="_blank" rel="noopener noreferrer">View Event →</a>` : '')
+        }
+      </div>
+    `;
+    return div;
+  }
+
+  // ── Grouping toggle ────────────────────────────────────────────────────────
+  function setGrouping(mode) {
+    groupBy = mode;
+    $('btnByArtist').classList.toggle('active', mode === 'artist');
+    $('btnByDate').classList.toggle('active', mode === 'date');
+    if (concerts.length) rebuildResults();
+  }
+
+  // ── Render a section group ─────────────────────────────────────────────────
+  function renderGroup(container, label, subLabel, list, showArtist) {
+    const section = document.createElement('div');
+    section.className = 'month-group';
+    section.innerHTML = `
+      <div class="group-label">
+        <h2>${esc(label)}</h2>
+        ${subLabel ? `<span class="event-count">${esc(subLabel)}</span>` : ''}
+        <div class="group-divider"></div>
+      </div>`;
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    list.forEach(c => grid.appendChild(buildCard(c, showArtist)));
+    section.appendChild(grid);
+    container.appendChild(section);
+  }
+
+  // ── Rebuild grouped results from concerts[] ────────────────────────────────
+  function rebuildResults() {
+    const container = $('results');
+    container.innerHTML = '';
+
+    const sorted = [...concerts].sort((a, b) => (a.date || '9999') < (b.date || '9999') ? -1 : 1);
+
+    if (groupBy === 'artist') {
+      const groups = new Map();
+      for (const c of sorted) {
+        if (!groups.has(c.artist)) groups.set(c.artist, []);
+        groups.get(c.artist).push(c);
+      }
+      groups.forEach((list, artist) => {
+        const n = list.length;
+        renderGroup(container, artist, `${n} show${n !== 1 ? 's' : ''}`, list, false);
+      });
+
+    } else {
+      // Group by month
+      const groups = new Map();
+      for (const c of sorted) {
+        const k = monthKey(c.date);
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(c);
+      }
+      groups.forEach((list, key) =>
+        renderGroup(container, monthLabel(key), null, list, true)
+      );
+    }
+
+    totalShown = sorted.length;
+    $('totalCount').textContent = totalShown;
+    $('resultsHeader').classList.toggle('show', totalShown > 0);
+    $('emptyState').classList.toggle('show', false);
+  }
+
+  // ── Search ─────────────────────────────────────────────────────────────────
+  function startSearch() {
+    if (sse) { sse.close(); sse = null; }
+
+    concerts = [];
+    $('results').innerHTML = '';
+    $('resultsHeader').classList.remove('show');
+    $('emptyState').classList.remove('show');
+    $('errorBox').classList.remove('show');
+    $('progressFill').classList.remove('done');
+    $('progressWrap').classList.add('show');
+    $('statusText').textContent = 'Connecting…';
+    $('findBtn').disabled = true;
+
+    sse = new EventSource('/api/concerts');
+
+    sse.addEventListener('status', e => {
+      $('statusText').textContent = JSON.parse(e.data).message;
+    });
+
+    sse.addEventListener('concert', e => {
+      const c = JSON.parse(e.data);
+      concerts.push(c);
+      rebuildResults();
+    });
+
+    sse.addEventListener('done', e => {
+      const { total } = JSON.parse(e.data);
+      sse.close(); sse = null;
+      $('progressFill').classList.add('done');
+      $('statusText').textContent = `✅ Search complete — ${total} concert${total !== 1 ? 's' : ''} found`;
+      $('findBtn').disabled = false;
+
+      if (total === 0) {
+        $('progressWrap').classList.remove('show');
+        $('emptyState').classList.add('show');
+      }
+    });
+
+    sse.addEventListener('error', e => {
+      let msg = 'Connection lost. Is the server running?';
+      try { msg = JSON.parse(e.data).message; } catch {}
+      sse.close(); sse = null;
+      $('progressWrap').classList.remove('show');
+      $('errorMsg').textContent = msg;
+      $('errorBox').classList.add('show');
+      $('findBtn').disabled = false;
+    });
+  }
+</script>
+</body>
+</html>
